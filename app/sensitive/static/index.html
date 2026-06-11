@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heimdall · 敏感信息监测</title>
+<style>
+:root {
+  --blue: #007AFF;
+  --blue-hover: #0062CC;
+  --red: #FF3B30;
+  --orange: #FF9500;
+  --green: #34C759;
+  --purple: #AF52DE;
+  --gray-50: #F5F5F7;
+  --gray-100: #E8E8ED;
+  --gray-200: #D1D1D6;
+  --gray-400: #8E8E93;
+  --gray-600: #636366;
+  --gray-800: #1D1D1F;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06);
+  --shadow: 0 4px 16px rgba(0,0,0,.06), 0 1px 4px rgba(0,0,0,.04);
+  --transition: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  background: var(--gray-50);
+  color: var(--gray-800);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+.container{max-width:1440px;margin:0 auto;padding:28px 32px}
+
+/* Header */
+.header{margin-bottom:28px}
+.header h1{font-size:2rem;font-weight:700;color:var(--gray-800);letter-spacing:-0.02em}
+.header p{font-size:.9rem;color:var(--gray-400);margin-top:2px}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:24px;background:rgba(0,0,0,.04);padding:4px;border-radius:10px;width:fit-content}
+.tab-btn{
+  padding:8px 20px;cursor:pointer;border:none;background:none;
+  font-size:.85rem;font-weight:500;color:var(--gray-600);
+  border-radius:8px;transition:var(--transition);white-space:nowrap;
+}
+.tab-btn:hover{color:var(--gray-800)}
+.tab-btn.active{background:#fff;color:var(--gray-800);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04)}
+
+/* Cards */
+.card{
+  background:#fff;border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:24px;margin-bottom:20px;
+  border:1px solid rgba(0,0,0,.04);
+}
+
+/* Form */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:800px}
+.form-grid .full{grid-column:1/-1}
+.form-label{display:block;font-size:.8rem;font-weight:600;color:var(--gray-600);margin-bottom:5px;letter-spacing:-0.01em}
+.form-label .req{color:var(--red);margin-left:1px}
+.form-label .opt{color:var(--gray-400);font-weight:400}
+.form-input,.form-textarea{
+  width:100%;padding:10px 14px;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);
+  font-size:.88rem;font-family:inherit;color:var(--gray-800);background:var(--gray-50);
+  transition:var(--transition);outline:none;
+}
+.form-input:focus,.form-textarea:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 4px rgba(0,122,255,.1)}
+.form-textarea{resize:vertical;min-height:64px}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:10px 20px;border:none;border-radius:var(--radius-sm);
+  font-size:.85rem;font-weight:600;cursor:pointer;
+  transition:var(--transition);font-family:inherit;
+  letter-spacing:-0.01em;
+}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--blue-hover);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,122,255,.3)}
+.btn-success{background:var(--green);color:#fff}.btn-success:hover{opacity:.9}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{opacity:.9}
+.btn-warning{background:var(--orange);color:#fff}.btn-warning:hover{opacity:.9}
+.btn-ghost{background:rgba(0,0,0,.04);color:var(--gray-600)}.btn-ghost:hover{background:rgba(0,0,0,.08)}
+.btn-sm{padding:5px 10px;font-size:.75rem;border-radius:7px}
+
+/* Status badges */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:600;letter-spacing:-0.01em}
+.b-pending{background:#F2F2F7;color:var(--gray-400)}
+.b-running{background:#E8F1FF;color:var(--blue)}
+.b-done{background:#E8F8ED;color:var(--green)}
+.b-failed{background:#FFECEB;color:var(--red)}
+.b-confirmed{background:#FFECEB;color:var(--red)}
+.b-suspected{background:#FFF3E0;color:var(--orange)}
+.b-irrelevant{background:#E8F8ED;color:var(--green)}
+
+/* Progress bar */
+.progress-wrap{width:140px}
+.progress-bar{height:4px;background:var(--gray-100);border-radius:2px;margin-top:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .6s ease}
+
+/* Tables */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+th{text-align:left;padding:10px 10px;font-weight:600;color:var(--gray-400);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--gray-100);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--gray-100);vertical-align:middle}
+tr:hover td{background:rgba(0,122,255,.02)}
+.cell-title{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--gray-800);font-size:.8rem}
+.cell-url{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem}
+.cell-url a{color:var(--blue);text-decoration:none}.cell-url a:hover{text-decoration:underline}
+.cell-reason{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem;color:var(--gray-600)}
+.cell-snippet{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem;color:var(--gray-600);cursor:pointer}
+.cell-snippet:hover{color:var(--blue)}
+
+/* Severity */
+.sev{font-weight:700;font-size:.8rem}
+.sev-high{color:var(--red)}.sev-mid{color:var(--orange)}.sev-low{color:var(--gray-400)}
+
+/* Source tag */
+.ftag{display:inline-block;padding:2px 7px;margin:1px 3px 1px 0;border-radius:5px;font-size:.68rem;font-weight:500;white-space:nowrap}
+.ftag-web{background:#E8F1FF;color:var(--blue)}
+.ftag-code{background:#F3E8FF;color:var(--purple)}
+.ftag-netdisk{background:#FFF3E0;color:var(--orange)}
+.ftag-intel{background:#FFECEB;color:var(--red)}
+
+/* Select & Input */
+select,input[type=number]{
+  border:1.5px solid var(--gray-200);border-radius:8px;padding:6px 10px;
+  font-size:.82rem;font-family:inherit;color:var(--gray-800);
+  background:#fff;outline:none;transition:var(--transition);
+}
+select:focus,input[type=number]:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,122,255,.1)}
+
+/* Filter row */
+.filter-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;font-size:.82rem}
+.filter-bar .sep{color:var(--gray-200)}
+
+/* Pager */
+.pager{display:flex;align-items:center;gap:4px;justify-content:center;margin-top:16px}
+.pager button{
+  min-width:32px;height:32px;border:1.5px solid var(--gray-200);border-radius:8px;
+  background:#fff;color:var(--gray-600);font-size:.8rem;cursor:pointer;
+  font-family:inherit;transition:var(--transition);display:inline-flex;align-items:center;justify-content:center;
+}
+.pager button:hover:not(:disabled){background:var(--gray-50);border-color:var(--gray-400)}
+.pager button:disabled{opacity:.3;cursor:default}
+.pager .pg-active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600;min-width:32px;height:32px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem}
+
+/* Modal (证据片段) */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.modal.show{display:flex}
+.modal-inner{max-width:720px;max-height:80vh;overflow-y:auto;background:#fff;border-radius:var(--radius);padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal-inner h3{font-size:.95rem;margin-bottom:12px}
+.modal-inner pre{white-space:pre-wrap;word-break:break-all;font-family:'SF Mono',Monaco,monospace;font-size:.75rem;background:var(--gray-50);padding:14px;border-radius:var(--radius-sm);line-height:1.7}
+
+/* Log */
+.log-box{
+  background:#1C1C1E;color:#98C379;font-family:'SF Mono',Monaco,'Cascadia Code',monospace;
+  font-size:.68rem;padding:12px 16px;border-radius:var(--radius-sm);
+  max-height:280px;overflow-y:auto;white-space:pre-wrap;line-height:1.7;
+  margin-top:12px;display:none;
+}
+
+/* Layout helper */
+.panel{display:none}
+.panel.show{display:block}
+
+/* Counter */
+.counter{font-size:.8rem;color:var(--gray-400);font-weight:500}
+
+/* Toast message */
+.toast{margin-left:12px;font-size:.82rem;font-weight:500}
+.toast-err{color:var(--red)}.toast-ok{color:var(--green)}
+
+/* Responsive */
+@media(max-width:768px){
+  .form-grid{grid-template-columns:1fr}
+  .container{padding:16px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+  <h1>Heimdall <span style="font-size:.55em;color:var(--gray-400);font-weight:500;letter-spacing:0">敏感信息监测</span></h1>
+  <p>多源发现 &nbsp;·&nbsp; AI 研判 &nbsp;·&nbsp; 人工复核 &nbsp;·&nbsp; <a href="/" style="color:var(--gray-400)">← 仿冒网站发现</a></p>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('create')">新建监测</button>
+  <button class="tab-btn" onclick="showTab('tasks')">监测任务</button>
+  <button class="tab-btn" onclick="showTab('results')">泄露线索</button>
+</div>
+
+<!-- CREATE -->
+<div id="panel-create" class="panel show">
+  <div class="card" style="max-width:820px">
+    <div class="form-grid">
+      <div>
+        <label class="form-label">单位名 / 品牌词 <span class="opt">逗号分隔</span></label>
+        <input id="f-brand" class="form-input" placeholder="某某银行, 某某集团">
+      </div>
+      <div>
+        <label class="form-label">域名 / 子域名 <span class="opt">逗号分隔</span></label>
+        <input id="f-domains" class="form-input" placeholder="example.com, oa.example.com">
+      </div>
+      <div>
+        <label class="form-label">邮箱后缀 <span class="opt">逗号分隔</span></label>
+        <input id="f-email" class="form-input" placeholder="@example.com">
+      </div>
+      <div>
+        <label class="form-label">内部特征串 <span class="opt">系统名 / 项目代号 / 特征路径</span></label>
+        <input id="f-markers" class="form-input" placeholder="XX管理系统, project-codename">
+      </div>
+      <div class="full">
+        <label class="form-label">AI 研判背景 <span class="opt">可选 · 帮助 AI 理解业务场景</span></label>
+        <textarea id="f-ai-prompt" class="form-textarea" rows="2" placeholder="如：这是铁路运输公司，重点关注员工 OA 账号、内部调度系统的数据泄露。"></textarea>
+      </div>
+      <div class="full">
+        <button class="btn btn-primary" onclick="submitTask()">开始监测</button>
+        <span id="create-msg" class="toast"></span>
+        <p style="font-size:.75rem;color:var(--gray-400);margin-top:10px">四类目标关键字至少填一类。AI 以这些关键字为锚研判线索是否与目标单位相关。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TASKS -->
+<div id="panel-tasks" class="panel">
+  <div class="card">
+    <div class="table-wrap">
+      <table><thead><tr><th>ID</th><th>目标关键字</th><th>状态</th><th>进度</th><th>线索</th><th>更新时间</th><th>操作</th></tr></thead>
+      <tbody id="task-list"></tbody></table>
+    </div>
+  </div>
+  <div id="log-panel" class="log-box"></div>
+</div>
+
+<!-- RESULTS -->
+<div id="panel-results" class="panel">
+  <div class="card">
+    <div class="filter-bar">
+      <span style="font-weight:600;color:var(--gray-800)">任务</span>
+      <select id="result-task-select" onchange="_page=1;loadLeaks()"></select>
+      <span class="sep">|</span>
+      <span style="font-weight:600;color:var(--gray-800)">敏感等级</span>
+      <select id="result-severity" onchange="_page=1;loadLeaks()">
+        <option value="">全部</option><option value="high">🔴 高</option><option value="mid">🟠 中</option><option value="low">⚪ 低</option>
+      </select>
+      <span style="font-weight:600;color:var(--gray-800)">研判结论</span>
+      <select id="result-verdict" onchange="_page=1;loadLeaks()">
+        <option value="">全部</option><option value="confirmed">确认泄露</option><option value="suspected">疑似</option><option value="irrelevant">无关</option>
+      </select>
+      <span style="font-weight:600;color:var(--gray-800)">标记</span>
+      <select id="result-label" onchange="_page=1;loadLeaks()">
+        <option value="">全部</option><option value="confirmed">已确认</option><option value="false_positive">误报</option><option value="pending">待定</option><option value="unset">未标</option>
+      </select>
+      <button class="btn btn-success btn-sm" onclick="exportCsv()">导出 CSV</button>
+      <span id="leak-count" class="counter" style="margin-left:auto"></span>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr>
+        <th>来源</th><th>标题 / 定位</th><th style="text-align:center">泄露类型</th>
+        <th style="text-align:center">研判结论</th><th style="text-align:center">敏感等级</th>
+        <th>研判理由</th><th>证据片段</th><th>链接</th><th style="text-align:center">标记</th>
+      </tr></thead>
+      <tbody id="leak-list"></tbody></table>
+    </div>
+    <div class="pager" id="leak-pager"></div>
+  </div>
+</div>
+</div>
+
+<div id="snippet-modal" class="modal" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="modal-inner">
+    <h3 id="snippet-title"></h3>
+    <pre id="snippet-body"></pre>
+  </div>
+</div>
+
+<script>
+var API='/sensitive/api/monitor';
+var SRC_NAME={web:'网页',code:'代码',netdisk:'网盘',intel:'情报'};
+var TYPE_NAME={credential:'账号口令',source_code:'源代码',document:'内部文档',database:'数据库',secret:'密钥',other:'其他'};
+var VERDICT_NAME={confirmed:'确认泄露',suspected:'疑似',irrelevant:'无关'};
+var SEV_NAME={high:'高',mid:'中',low:'低'};
+
+// ── TAB ──────────────────────────────────────────────────
+function showTab(name){
+  ['create','tasks','results'].forEach(function(t){
+    document.getElementById('panel-'+t).classList.toggle('show',t===name);
+  });
+  document.querySelectorAll('.tab-btn').forEach(function(el,i){
+    var t=['create','tasks','results'][i];
+    el.classList.toggle('active',t===name);
+  });
+  if(name==='tasks'){loadTasks();startPoll();}
+  else{stopPoll();}
+  if(name==='results'){loadTaskSelect().then(function(){loadLeaks();startResultPoll();});}
+  else{stopResultPoll();}
+}
+
+var _poll=null,_logPoll=null,_resPoll=null,_sinceId=0,_page=1;
+function startPoll(){stopPoll();_poll=setInterval(loadTasks,3000);}
+function stopPoll(){if(_poll){clearInterval(_poll);_poll=null;}if(_logPoll){clearInterval(_logPoll);_logPoll=null;}}
+function startResultPoll(){stopResultPoll();_resPoll=setInterval(function(){loadLeaks(true);},5000);}
+function stopResultPoll(){if(_resPoll){clearInterval(_resPoll);_resPoll=null;}}
+
+// ── CREATE ───────────────────────────────────────────────
+async function submitTask(){
+  var body={
+    brand_keywords:document.getElementById('f-brand').value.trim(),
+    domains:document.getElementById('f-domains').value.trim(),
+    email_suffixes:document.getElementById('f-email').value.trim(),
+    internal_markers:document.getElementById('f-markers').value.trim(),
+    ai_prompt:document.getElementById('f-ai-prompt').value.trim(),
+  };
+  var m=document.getElementById('create-msg');
+  if(!body.brand_keywords&&!body.domains&&!body.email_suffixes&&!body.internal_markers){
+    m.textContent='至少填写一类目标关键字';m.className='toast toast-err';return;
+  }
+  m.textContent='提交中…';m.className='toast';
+  try{
+    var r=await fetch(API+'/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok){m.textContent='提交失败';m.className='toast toast-err';return}
+    var t=await r.json();
+    m.textContent='监测任务 #'+t.id+' 已创建';m.className='toast toast-ok';
+    ['f-brand','f-domains','f-email','f-markers','f-ai-prompt'].forEach(function(id){document.getElementById(id).value='';});
+    _sinceId=0;showTab('tasks');startLogPoll(t.id);
+  }catch(e){m.textContent='网络错误';m.className='toast toast-err'}
+}
+
+// ── TASKS ────────────────────────────────────────────────
+function taskKeywords(t){
+  return [t.brand_keywords,t.domains,t.email_suffixes,t.internal_markers].filter(Boolean).join(', ');
+}
+async function loadTasks(){
+  try{
+    var r=await fetch(API+'/tasks?limit=20');
+    var arr=await r.json();
+    var html='';
+    arr.forEach(function(t){
+      var btns='<button class="btn btn-primary btn-sm" onclick="viewResults('+t.id+')">查看</button> ';
+      if(t.status==='running'){btns+='<button class="btn btn-warning btn-sm" onclick="stopTask('+t.id+')">停止</button> ';}
+      btns+='<button class="btn btn-danger btn-sm" onclick="deleteTask('+t.id+')">删除</button> ';
+      if(t.status==='running'){btns+='<button class="btn btn-ghost btn-sm" onclick="showTaskLog('+t.id+')">日志</button>';}
+      html+='<tr><td style="font-weight:600">#'+t.id+'</td><td class="cell-title" title="'+esc(taskKeywords(t))+'">'+esc(taskKeywords(t).slice(0,45))+'</td>'+
+        '<td>'+statusBadge(t.status)+'</td><td>'+progressHtml(t)+'</td>'+
+        '<td style="font-weight:600">'+t.leak_count+'</td><td style="font-size:.78rem;color:var(--gray-400)">'+t.updated_at.slice(0,16)+'</td><td>'+btns+'</td></tr>';
+    });
+    document.getElementById('task-list').innerHTML=html||'<tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:32px">暂无监测任务</td></tr>';
+  }catch(e){}
+}
+
+function progressHtml(t){
+  if(t.status==='done')return '<span style="font-size:.78rem;color:var(--green)">完成</span>';
+  if(t.status==='failed')return '<span style="font-size:.78rem;color:var(--red)">'+esc(t.message.slice(0,40))+'</span>';
+  if(t.status==='pending')return '<span style="font-size:.78rem;color:var(--gray-400)">等待中</span>';
+  var m=t.message||'',pct=15;
+  if(m.indexOf('发现')>=0)pct=35;
+  if(m.indexOf('研判')>=0)pct=70;
+  return '<div><span style="font-size:.75rem;color:var(--blue)">'+esc(m)+'</span><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div></div></div></div>';
+}
+
+// ── LOG ──────────────────────────────────────────────────
+function startLogPoll(tid){
+  _sinceId=0;
+  var p=document.getElementById('log-panel');p.style.display='block';p.textContent='';
+  if(_logPoll)clearInterval(_logPoll);
+  _logPoll=setInterval(function(){pollLogs(tid);},2000);
+}
+function showTaskLog(tid){startLogPoll(tid);pollLogs(tid);}
+async function pollLogs(tid){
+  try{
+    var r=await fetch(API+'/tasks/'+tid+'/logs?since_id='+_sinceId+'&limit=200');
+    var arr=await r.json();if(!arr.length)return;
+    var p=document.getElementById('log-panel');
+    arr.forEach(function(l){p.textContent+=l.ts.slice(11,19)+'  '+l.message+'\n';});
+    _sinceId=arr[arr.length-1].id;p.scrollTop=p.scrollHeight;
+    var last=arr[arr.length-1].message||'';
+    if(last.indexOf('完成')>=0||last.indexOf('异常')>=0||last.indexOf('停止')>=0||last.indexOf('未发现')>=0){
+      if(_logPoll){clearInterval(_logPoll);_logPoll=null;}loadTasks();
+    }
+  }catch(e){}
+}
+
+async function stopTask(id){if(!confirm('停止监测任务 #'+id+'？'))return;await fetch(API+'/tasks/'+id+'/stop',{method:'POST'});loadTasks();}
+async function deleteTask(id){if(!confirm('删除监测任务 #'+id+' 及所有线索？'))return;await fetch(API+'/tasks/'+id,{method:'DELETE'});document.getElementById('log-panel').style.display='none';loadTasks();}
+
+// ── RESULTS ──────────────────────────────────────────────
+async function loadTaskSelect(){
+  try{
+    var r=await fetch(API+'/tasks?limit=50');
+    var arr=await r.json();
+    document.getElementById('result-task-select').innerHTML=arr.map(function(t){
+      return '<option value="'+t.id+'">#'+t.id+' '+esc(taskKeywords(t).slice(0,30))+'（'+t.leak_count+'条）</option>';
+    }).join('');
+  }catch(e){}
+}
+
+function viewResults(tid){_page=1;
+  showTab('results');loadTaskSelect().then(function(){
+  document.getElementById('result-task-select').value=tid;loadLeaks();});
+}
+
+async function loadLeaks(silent){
+  var tid=document.getElementById('result-task-select').value;if(!tid)return;
+  var params=new URLSearchParams({per_page:100,page:_page});
+  var sev=document.getElementById('result-severity').value;
+  var verdict=document.getElementById('result-verdict').value;
+  var label=document.getElementById('result-label').value;
+  if(sev)params.set('severity',sev);
+  if(verdict)params.set('verdict',verdict);
+  if(label)params.set('label',label);
+  try{
+    var r=await fetch(API+'/tasks/'+tid+'/leaks?'+params);
+    var data=await r.json();
+    var arr=data.items||[],total=data.total||0,pages=data.pages||1;
+    var tr=await fetch(API+'/tasks/'+tid);var tinfo=await tr.json();
+    if(tinfo.status==='done'||tinfo.status==='failed')stopResultPoll();
+    document.getElementById('leak-count').textContent='共 '+total+' 条 · 第 '+_page+'/'+pages+' 页';
+    renderPager(pages);
+    if(!silent||arr.length>0){
+      var html='';
+      arr.forEach(function(lk){
+        html+='<tr>'+
+          '<td><span class="ftag ftag-'+esc(lk.source)+'">'+(SRC_NAME[lk.source]||esc(lk.source))+'</span></td>'+
+          '<td class="cell-title" title="'+esc(lk.locator)+'">'+esc(lk.title||lk.locator)+'</td>'+
+          '<td style="text-align:center;font-size:.75rem">'+(TYPE_NAME[lk.leak_type]||'—')+'</td>'+
+          '<td style="text-align:center">'+verdictBadge(lk)+'</td>'+
+          '<td style="text-align:center">'+sevHtml(lk.severity)+'</td>'+
+          '<td class="cell-reason" title="'+esc(lk.reason)+'">'+esc(lk.reason||'-')+'</td>'+
+          '<td class="cell-snippet" onclick=\'showSnippet('+JSON.stringify(lk.id)+')\' title="点击查看完整片段">'+esc((lk.snippet||'—').slice(0,60))+'</td>'+
+          '<td class="cell-url">'+(lk.url?'<a href="'+esc(lk.url)+'" target="_blank" rel="noopener" title="'+esc(lk.url)+'">'+esc(lk.url.replace(/^https?:\/\//,''))+'</a>':'—')+'</td>'+
+          '<td style="text-align:center"><select onchange="setLabel('+lk.id+',this.value)" style="font-size:.72rem;padding:3px 6px">'+
+            '<option value="unset" '+(lk.manual_label==='unset'?'selected':'')+'>未标</option>'+
+            '<option value="confirmed" '+(lk.manual_label==='confirmed'?'selected':'')+'>🚨 确认</option>'+
+            '<option value="false_positive" '+(lk.manual_label==='false_positive'?'selected':'')+'>✅ 误报</option>'+
+            '<option value="pending" '+(lk.manual_label==='pending'?'selected':'')+'>🕐 待定</option>'+
+          '</select></td></tr>';
+      });
+      document.getElementById('leak-list').innerHTML=html||'<tr><td colspan="9" style="text-align:center;color:var(--gray-400);padding:32px">暂无线索</td></tr>';
+      _leakCache={};arr.forEach(function(lk){_leakCache[lk.id]=lk;});
+    }
+  }catch(e){}
+}
+
+var _leakCache={};
+function showSnippet(id){
+  var lk=_leakCache[id];if(!lk)return;
+  document.getElementById('snippet-title').textContent=lk.title||lk.locator;
+  document.getElementById('snippet-body').textContent=(lk.snippet||'(无证据片段)')+'\n\n定位: '+lk.locator+(lk.url?'\nURL: '+lk.url:'');
+  document.getElementById('snippet-modal').classList.add('show');
+}
+
+function renderPager(pages){
+  var h='';if(pages<=1){document.getElementById('leak-pager').innerHTML='';return}
+  h+='<button onclick="goPage('+Math.max(1,_page-1)+')" ' +(_page<=1?'disabled':'')+'>‹</button>';
+  for(var i=1;i<=pages;i++){
+    if(i===_page)h+='<span class="pg-active">'+i+'</span>';
+    else if(Math.abs(i-_page)<=2||i===1||i===pages)h+='<button onclick="goPage('+i+')">'+i+'</button>';
+    else if(i===2||i===pages-1)h+='<button>…</button>';
+  }
+  h+='<button onclick="goPage('+Math.min(pages,_page+1)+')" ' +(_page>=pages?'disabled':'')+'>›</button>';
+  document.getElementById('leak-pager').innerHTML=h;
+}
+function goPage(p){_page=p;loadLeaks();window.scrollTo({top:0,behavior:'smooth'});}
+
+async function setLabel(id,val){
+  await fetch(API+'/leaks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({manual_label:val})});
+  loadLeaks(true);
+}
+function exportCsv(){var tid=document.getElementById('result-task-select').value;if(tid)window.open(API+'/tasks/'+tid+'/export','_blank');}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function statusBadge(s){
+  var m={pending:'b-pending',running:'b-running',done:'b-done',failed:'b-failed'};
+  var t={pending:'⏳ 等待',running:'● 运行中',done:'✓ 完成',failed:'✕ 失败'};
+  return '<span class="badge '+(m[s]||'')+'">'+(t[s]||s)+'</span>';
+}
+function verdictBadge(lk){
+  if(!lk.verdict)return '<span style="color:var(--gray-200)">—</span>';
+  return '<span class="badge b-'+esc(lk.verdict)+'">'+(VERDICT_NAME[lk.verdict]||esc(lk.verdict))+'</span><br>'+
+    '<span style="font-size:.65rem;color:var(--gray-400)">'+Math.round((lk.confidence||0)*100)+'%</span>';
+}
+function sevHtml(s){
+  if(!s)return '<span style="color:var(--gray-200)">—</span>';
+  return '<span class="sev sev-'+esc(s)+'">'+(SEV_NAME[s]||esc(s))+'</span>';
+}
+
+showTab('create');
+</script>
+</body>
+</html>

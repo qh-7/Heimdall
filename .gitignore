@@ -1,0 +1,16 @@
+# 运行时生成
+config.yaml
+__pycache__/
+*.pyc
+app/data/app.db
+app/data/screenshots/*
+app/data/exports/*
+!app/data/screenshots/.gitkeep
+!app/data/exports/.gitkeep
+.venv/
+venv/
+
+# 本地 IDE / 编辑器
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heimdall · 仿冒网站发现</title>
+<style>
+:root {
+  --blue: #007AFF;
+  --blue-hover: #0062CC;
+  --red: #FF3B30;
+  --orange: #FF9500;
+  --green: #34C759;
+  --purple: #AF52DE;
+  --gray-50: #F5F5F7;
+  --gray-100: #E8E8ED;
+  --gray-200: #D1D1D6;
+  --gray-400: #8E8E93;
+  --gray-600: #636366;
+  --gray-800: #1D1D1F;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06);
+  --shadow: 0 4px 16px rgba(0,0,0,.06), 0 1px 4px rgba(0,0,0,.04);
+  --transition: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  background: var(--gray-50);
+  color: var(--gray-800);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+.container{max-width:1440px;margin:0 auto;padding:28px 32px}
+
+/* Header */
+.header{margin-bottom:28px}
+.header h1{font-size:2rem;font-weight:700;color:var(--gray-800);letter-spacing:-0.02em}
+.header p{font-size:.9rem;color:var(--gray-400);margin-top:2px}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:24px;background:rgba(0,0,0,.04);padding:4px;border-radius:10px;width:fit-content}
+.tab-btn{
+  padding:8px 20px;cursor:pointer;border:none;background:none;
+  font-size:.85rem;font-weight:500;color:var(--gray-600);
+  border-radius:8px;transition:var(--transition);white-space:nowrap;
+}
+.tab-btn:hover{color:var(--gray-800)}
+.tab-btn.active{background:#fff;color:var(--gray-800);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04)}
+
+/* Cards */
+.card{
+  background:#fff;border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:24px;margin-bottom:20px;
+  border:1px solid rgba(0,0,0,.04);
+}
+
+/* Form */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:800px}
+.form-grid .full{grid-column:1/-1}
+.form-label{display:block;font-size:.8rem;font-weight:600;color:var(--gray-600);margin-bottom:5px;letter-spacing:-0.01em}
+.form-label .req{color:var(--red);margin-left:1px}
+.form-label .opt{color:var(--gray-400);font-weight:400}
+.form-input,.form-textarea{
+  width:100%;padding:10px 14px;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);
+  font-size:.88rem;font-family:inherit;color:var(--gray-800);background:var(--gray-50);
+  transition:var(--transition);outline:none;
+}
+.form-input:focus,.form-textarea:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 4px rgba(0,122,255,.1)}
+.form-textarea{resize:vertical;min-height:64px}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:10px 20px;border:none;border-radius:var(--radius-sm);
+  font-size:.85rem;font-weight:600;cursor:pointer;
+  transition:var(--transition);font-family:inherit;
+  letter-spacing:-0.01em;
+}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--blue-hover);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,122,255,.3)}
+.btn-success{background:var(--green);color:#fff}.btn-success:hover{opacity:.9}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{opacity:.9}
+.btn-warning{background:var(--orange);color:#fff}.btn-warning:hover{opacity:.9}
+.btn-ghost{background:rgba(0,0,0,.04);color:var(--gray-600)}.btn-ghost:hover{background:rgba(0,0,0,.08)}
+.btn-sm{padding:5px 10px;font-size:.75rem;border-radius:7px}
+
+/* Status badges */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:600;letter-spacing:-0.01em}
+.b-pending{background:#F2F2F7;color:var(--gray-400)}
+.b-running{background:#E8F1FF;color:var(--blue)}
+.b-done{background:#E8F8ED;color:var(--green)}
+.b-failed{background:#FFECEB;color:var(--red)}
+.b-phishing{background:#FFECEB;color:var(--red)}
+.b-suspicious{background:#FFF3E0;color:var(--orange)}
+.b-benign{background:#E8F8ED;color:var(--green)}
+
+/* Progress bar */
+.progress-wrap{width:140px}
+.progress-bar{height:4px;background:var(--gray-100);border-radius:2px;margin-top:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .6s ease}
+
+/* Tables */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+th{text-align:left;padding:10px 10px;font-weight:600;color:var(--gray-400);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--gray-100);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--gray-100);vertical-align:middle}
+tr:hover td{background:rgba(0,122,255,.02)}
+.cell-domain{font-weight:600;color:var(--gray-800);font-size:.82rem}
+.cell-title{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem;color:var(--gray-600)}
+.cell-url{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem}
+.cell-url a{color:var(--blue);text-decoration:none}.cell-url a:hover{text-decoration:underline}
+.cell-reason{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem;color:var(--gray-600)}
+
+/* Score */
+.score{font-weight:700;font-size:.9rem}
+.sc-hi{color:var(--red)}.sc-md{color:var(--orange)}.sc-lo{color:var(--gray-400)}
+
+/* Feature tags */
+.ftag{display:inline-block;padding:2px 7px;margin:1px 3px 1px 0;border-radius:5px;font-size:.68rem;font-weight:500;white-space:nowrap}
+.ftag-on{background:#E8F1FF;color:var(--blue)}
+.ftag-warn{background:#FFECEB;color:var(--red)}
+.ftag-neutral{background:var(--gray-50);color:var(--gray-600)}
+
+/* Select & Input */
+select,input[type=number]{
+  border:1.5px solid var(--gray-200);border-radius:8px;padding:6px 10px;
+  font-size:.82rem;font-family:inherit;color:var(--gray-800);
+  background:#fff;outline:none;transition:var(--transition);
+}
+select:focus,input[type=number]:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,122,255,.1)}
+
+/* Filter row */
+.filter-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;font-size:.82rem}
+.filter-bar .sep{color:var(--gray-200)}
+
+/* Pager */
+.pager{display:flex;align-items:center;gap:4px;justify-content:center;margin-top:16px}
+.pager button{
+  min-width:32px;height:32px;border:1.5px solid var(--gray-200);border-radius:8px;
+  background:#fff;color:var(--gray-600);font-size:.8rem;cursor:pointer;
+  font-family:inherit;transition:var(--transition);display:inline-flex;align-items:center;justify-content:center;
+}
+.pager button:hover:not(:disabled){background:var(--gray-50);border-color:var(--gray-400)}
+.pager button:disabled{opacity:.3;cursor:default}
+.pager .pg-active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600}
+
+/* Screenshot */
+.screenshot-thumb{
+  width:120px;height:72px;object-fit:cover;cursor:pointer;
+  border-radius:8px;border:1.5px solid var(--gray-100);
+  transition:var(--transition);
+}
+.screenshot-thumb:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(0,122,255,.15);transform:scale(1.03)}
+.no-shot{color:var(--gray-200);font-size:.7rem}
+
+/* Modal */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.modal.show{display:flex}
+.modal-inner{max-width:92vw;max-height:92vh;background:#fff;border-radius:var(--radius);padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal-inner img{max-width:88vw;max-height:84vh;border-radius:6px}
+
+/* Log */
+.log-box{
+  background:#1C1C1E;color:#98C379;font-family:'SF Mono',Monaco,'Cascadia Code',monospace;
+  font-size:.68rem;padding:12px 16px;border-radius:var(--radius-sm);
+  max-height:280px;overflow-y:auto;white-space:pre-wrap;line-height:1.7;
+  margin-top:12px;display:none;
+}
+
+/* Layout helper */
+.panel{display:none}
+.panel.show{display:block}
+
+/* Counter */
+.counter{font-size:.8rem;color:var(--gray-400);font-weight:500}
+
+/* Toast message */
+.toast{margin-left:12px;font-size:.82rem;font-weight:500}
+.toast-err{color:var(--red)}.toast-ok{color:var(--green)}
+
+/* Responsive */
+@media(max-width:768px){
+  .form-grid{grid-template-columns:1fr}
+  .container{padding:16px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+  <h1>Heimdall <span style="font-size:.55em;color:var(--gray-400);font-weight:500;letter-spacing:0">仿冒网站发现</span></h1>
+  <p>多源发现 &nbsp;·&nbsp; AI 降噪 &nbsp;·&nbsp; 行为分析 &nbsp;·&nbsp; 智能评分 &nbsp;·&nbsp; <a href="/sensitive/" style="color:var(--gray-400)">敏感信息监测 →</a></p>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('create')">新建任务</button>
+  <button class="tab-btn" onclick="showTab('tasks')">任务列表</button>
+  <button class="tab-btn" onclick="showTab('results')">查看结果</button>
+</div>
+
+<!-- CREATE -->
+<div id="panel-create" class="panel show">
+  <div class="card" style="max-width:820px">
+    <div class="form-grid">
+      <div class="full">
+        <label class="form-label">品牌关键词 <span class="req">*</span></label>
+        <textarea id="f-keywords" class="form-textarea" rows="3" placeholder="多个用逗号或换行分隔，如：某某银行, 某某支付"></textarea>
+      </div>
+      <div>
+        <label class="form-label">官方域名 <span class="opt">可选</span></label>
+        <input id="f-domains" class="form-input" placeholder="example.com, example.cn">
+      </div>
+      <div>
+        <label class="form-label">Favicon URL <span class="opt">可选</span></label>
+        <input id="f-favicon" class="form-input" placeholder="https://example.com/favicon.ico">
+      </div>
+      <div class="full">
+        <label class="form-label">AI 研判背景 <span class="opt">可选 · 帮助 AI 理解业务场景</span></label>
+        <textarea id="f-ai-prompt" class="form-textarea" rows="2" placeholder="如：这是铁路运输公司，用户主要是乘客和货主。仿冒网站通常假冒其售票系统或物流平台进行诈骗。"></textarea>
+      </div>
+      <div class="full">
+        <button class="btn btn-primary" onclick="submitTask()">提交任务</button>
+        <span id="create-msg" class="toast"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TASKS -->
+<div id="panel-tasks" class="panel">
+  <div class="card">
+    <div class="table-wrap">
+      <table><thead><tr><th>ID</th><th>品牌词</th><th>状态</th><th>进度</th><th>候选</th><th>更新时间</th><th>操作</th></tr></thead>
+      <tbody id="task-list"></tbody></table>
+    </div>
+  </div>
+  <div id="log-panel" class="log-box"></div>
+</div>
+
+<!-- RESULTS -->
+<div id="panel-results" class="panel">
+  <div class="card">
+    <div class="filter-bar">
+      <span style="font-weight:600;color:var(--gray-800)">任务</span>
+      <select id="result-task-select" onchange="loadCandidates()"></select>
+      <span class="sep">|</span>
+      <span style="font-weight:600;color:var(--gray-800)">最低分</span>
+      <input id="result-min-score" type="number" value="0" onchange="loadCandidates()" style="width:64px">
+      <span style="font-weight:600;color:var(--gray-800)">AI 判定</span>
+      <select id="result-ai" onchange="loadCandidates()">
+        <option value="">全部</option><option value="phishing">🐟 仿冒</option><option value="suspicious">⚠️ 可疑</option><option value="benign">✅ 正常</option>
+      </select>
+      <span style="font-weight:600;color:var(--gray-800)">标记</span>
+      <select id="result-label" onchange="loadCandidates()">
+        <option value="">全部</option><option value="phishing">仿冒</option><option value="false_positive">误报</option><option value="pending">待定</option><option value="unset">未标</option>
+      </select>
+      <button class="btn btn-success btn-sm" onclick="exportCsv()">导出 CSV</button>
+      <span id="cand-count" class="counter" style="margin-left:auto"></span>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr>
+        <th>域名</th><th>标题</th><th style="text-align:center">评分</th>
+        <th style="text-align:center">AI 判定</th><th>判据</th><th>特征</th><th>最终 URL</th>
+        <th style="text-align:center">截图</th><th style="text-align:center">标记</th>
+      </tr></thead>
+      <tbody id="candidate-list"></tbody></table>
+    </div>
+    <div class="pager" id="candidate-pager"></div>
+  </div>
+</div>
+</div>
+
+<div id="screenshot-modal" class="modal" onclick="this.classList.remove('show')">
+  <div class="modal-inner"><img id="screenshot-big" src="" alt="截图"></div>
+</div>
+
+<script>
+// ── TAB ──────────────────────────────────────────────────
+function showTab(name){
+  ['create','tasks','results'].forEach(function(t){
+    document.getElementById('panel-'+t).classList.toggle('show',t===name);
+  });
+  document.querySelectorAll('.tab-btn').forEach(function(el,i){
+    var t=['create','tasks','results'][i];
+    el.classList.toggle('active',t===name);
+  });
+  if(name==='tasks'){loadTasks();startPoll();}
+  else{stopPoll();}
+  if(name==='results'){loadTaskSelect().then(function(){loadCandidates();startResultPoll();});}
+  else{stopResultPoll();}
+}
+
+var _poll=null,_logPoll=null,_resPoll=null,_sinceId=0,_page=1;
+function startPoll(){stopPoll();_poll=setInterval(loadTasks,3000);}
+function stopPoll(){if(_poll){clearInterval(_poll);_poll=null;}if(_logPoll){clearInterval(_logPoll);_logPoll=null;}}
+function startResultPoll(){stopResultPoll();_resPoll=setInterval(function(){loadCandidates(true);},5000);}
+function stopResultPoll(){if(_resPoll){clearInterval(_resPoll);_resPoll=null;}}
+
+// ── CREATE ───────────────────────────────────────────────
+async function submitTask(){
+  var kw=document.getElementById('f-keywords').value.trim().replace(/\n/g,',');
+  var od=document.getElementById('f-domains').value.trim();
+  var fv=document.getElementById('f-favicon').value.trim();
+  var ap=document.getElementById('f-ai-prompt').value.trim();
+  var m=document.getElementById('create-msg');
+  if(!kw){m.textContent='请填写品牌关键词';m.className='toast toast-err';return}
+  m.textContent='提交中…';m.className='toast';
+  try{
+    var r=await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({brand_keywords:kw,official_domains:od,favicon_url:fv,ai_prompt:ap})});
+    if(!r.ok){m.textContent='提交失败';m.className='toast toast-err';return}
+    var t=await r.json();
+    m.textContent='任务 #'+t.id+' 已创建';m.className='toast toast-ok';
+    document.getElementById('f-keywords').value='';
+    document.getElementById('f-domains').value='';
+    document.getElementById('f-favicon').value='';
+    document.getElementById('f-ai-prompt').value='';
+    _sinceId=0;showTab('tasks');startLogPoll(t.id);
+  }catch(e){m.textContent='网络错误';m.className='toast toast-err'}
+}
+
+// ── TASKS ────────────────────────────────────────────────
+async function loadTasks(){
+  try{
+    var r=await fetch('/api/tasks?limit=20');
+    var arr=await r.json();
+    var html='';
+    arr.forEach(function(t){
+      var btns='<button class="btn btn-primary btn-sm" onclick="viewResults('+t.id+')">查看</button> ';
+      if(t.status==='running'){btns+='<button class="btn btn-warning btn-sm" onclick="stopTask('+t.id+')">停止</button> ';}
+      btns+='<button class="btn btn-danger btn-sm" onclick="deleteTask('+t.id+')">删除</button> ';
+      if(t.status==='running'){btns+='<button class="btn btn-ghost btn-sm" onclick="showTaskLog('+t.id+')">日志</button>';}
+      html+='<tr><td style="font-weight:600">#'+t.id+'</td><td>'+esc(t.brand_keywords.slice(0,45))+'</td>'+
+        '<td>'+statusBadge(t.status)+'</td><td>'+progressHtml(t)+'</td>'+
+        '<td style="font-weight:600">'+t.candidate_count+'</td><td style="font-size:.78rem;color:var(--gray-400)">'+t.updated_at.slice(0,16)+'</td><td>'+btns+'</td></tr>';
+    });
+    document.getElementById('task-list').innerHTML=html||'<tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:32px">暂无任务</td></tr>';
+  }catch(e){}
+}
+
+function progressHtml(t){
+  if(t.status==='done')return '<span style="font-size:.78rem;color:var(--green)">完成</span>';
+  if(t.status==='failed')return '<span style="font-size:.78rem;color:var(--red)">'+esc(t.message.slice(0,40))+'</span>';
+  if(t.status==='pending')return '<span style="font-size:.78rem;color:var(--gray-400)">等待中</span>';
+  var m=t.message||'',pct=15;
+  if(m.indexOf('发现完成')>=0)pct=30;
+  if(m.indexOf('过滤')>=0)pct=40;
+  if(m.indexOf('AI降噪')>=0||m.indexOf('AI 降噪')>=0)pct=55;
+  if(m.indexOf('行为分析')>=0)pct=75;
+  if(m.indexOf('评分')>=0)pct=90;
+  return '<div><span style="font-size:.75rem;color:var(--blue)">'+esc(m)+'</span><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div></div></div></div>';
+}
+
+// ── LOG ──────────────────────────────────────────────────
+async function startLogPoll(tid){
+  _sinceId=0;
+  var p=document.getElementById('log-panel');p.style.display='block';p.textContent='';
+  if(_logPoll)clearInterval(_logPoll);
+  _logPoll=setInterval(function(){pollLogs(tid);},2000);
+}
+async function showTaskLog(tid){
+  _sinceId=0;
+  var p=document.getElementById('log-panel');p.style.display='block';p.textContent='';
+  if(_logPoll)clearInterval(_logPoll);
+  _logPoll=setInterval(function(){pollLogs(tid);},2000);
+  pollLogs(tid);
+}
+async function pollLogs(tid){
+  try{
+    var r=await fetch('/api/tasks/'+tid+'/logs?since_id='+_sinceId+'&limit=200');
+    var arr=await r.json();if(!arr.length)return;
+    var p=document.getElementById('log-panel');
+    arr.forEach(function(l){p.textContent+=l.ts.slice(11,19)+'  '+l.message+'\n';});
+    _sinceId=arr[arr.length-1].id;p.scrollTop=p.scrollHeight;
+    if((arr[arr.length-1].message||'').indexOf('完成')>=0||(arr[arr.length-1].message||'').indexOf('异常')>=0||(arr[arr.length-1].message||'').indexOf('停止')>=0){
+      if(_logPoll){clearInterval(_logPoll);_logPoll=null;}loadTasks();
+    }
+  }catch(e){}
+}
+
+async function stopTask(id){if(!confirm('停止任务 #'+id+'？'))return;await fetch('/api/tasks/'+id+'/stop',{method:'POST'});loadTasks();}
+async function deleteTask(id){if(!confirm('删除任务 #'+id+' 及所有结果？'))return;await fetch('/api/tasks/'+id,{method:'DELETE'});document.getElementById('log-panel').style.display='none';loadTasks();}
+
+// ── RESULTS ──────────────────────────────────────────────
+async function loadTaskSelect(){
+  try{
+    var r=await fetch('/api/tasks?limit=50');
+    var arr=await r.json();
+    document.getElementById('result-task-select').innerHTML=arr.map(function(t){
+      return '<option value="'+t.id+'">#'+t.id+' '+esc(t.brand_keywords.slice(0,30))+'（'+t.candidate_count+'个）</option>';
+    }).join('');
+  }catch(e){}
+}
+
+function viewResults(tid){_page=1;
+  document.getElementById('result-task-select').value=tid;
+  showTab('results');loadTaskSelect().then(function(){
+  document.getElementById('result-task-select').value=tid;loadCandidates();});
+}
+
+async function loadCandidates(silent){
+  var tid=document.getElementById('result-task-select').value;if(!tid)return;
+  var min=parseInt(document.getElementById('result-min-score').value)||0;
+  var label=document.getElementById('result-label').value;
+  var ai=document.getElementById('result-ai').value;
+  var perPage=100;
+  var params=new URLSearchParams({per_page:perPage,page:_page});
+  if(min)params.set('min_score',min);
+  if(label)params.set('label',label);
+  if(ai)params.set('ai_verdict',ai);
+  try{
+    var r=await fetch('/api/tasks/'+tid+'/candidates?'+params);
+    var data=await r.json();
+    var arr=data.items||[],total=data.total||0,pages=data.pages||1;
+    var tr=await fetch('/api/tasks/'+tid);var tinfo=await tr.json();
+    if(tinfo.status==='done'||tinfo.status==='failed')stopResultPoll();
+    document.getElementById('cand-count').textContent='共 '+total+' 条 · 第 '+_page+'/'+pages+' 页';
+    renderPager(pages);
+    if(!silent||arr.length>0){
+      var html='';
+      arr.forEach(function(c){
+        var sc=c.score,scCls=sc>=50?'sc-hi':sc>=20?'sc-md':'sc-lo';
+        html+='<tr>'+
+          '<td class="cell-domain">'+esc(c.domain)+(c.icon_match?' <span style="color:var(--blue)">ⓘ</span>':'')+'</td>'+
+          '<td class="cell-title" title="'+esc(c.title)+'">'+esc(c.title||'-')+'</td>'+
+          '<td style="text-align:center"><span class="score '+scCls+'">'+sc+'</span></td>'+
+          '<td style="text-align:center">'+llmBadge(c)+'</td>'+
+          '<td class="cell-reason" title="'+esc(c.llm_reason)+'">'+esc(c.llm_reason||'-')+'</td>'+
+          '<td>'+featureTags(c)+'</td>'+
+          '<td class="cell-url"><a href="'+esc(c.final_url||'')+'" target="_blank" rel="noopener" title="'+esc(c.final_url||'')+'">'+esc((c.final_url||c.host||'').replace('https://','').replace('http://',''))+'</a></td>'+
+          '<td style="text-align:center">'+(c.screenshot_path?'<img src="/api/screenshots/'+c.screenshot_path+'" class="screenshot-thumb" onclick="showShot(\'/api/screenshots/'+c.screenshot_path+'\')" loading="lazy">':'<span class="no-shot">—</span>')+'</td>'+
+          '<td style="text-align:center"><select onchange="setLabel('+c.id+',this.value)" style="font-size:.72rem;padding:3px 6px">'+
+            '<option value="unset" '+(c.manual_label==='unset'?'selected':'')+'>未标</option>'+
+            '<option value="phishing" '+(c.manual_label==='phishing'?'selected':'')+'>🐟 仿冒</option>'+
+            '<option value="false_positive" '+(c.manual_label==='false_positive'?'selected':'')+'>✅ 误报</option>'+
+            '<option value="pending" '+(c.manual_label==='pending'?'selected':'')+'>🕐 待定</option>'+
+          '</select></td></tr>';
+      });
+      document.getElementById('candidate-list').innerHTML=html||'<tr><td colspan="9" style="text-align:center;color:var(--gray-400);padding:32px">暂无候选</td></tr>';
+    }
+  }catch(e){}
+}
+
+function renderPager(pages){
+  var h='';if(pages<=1){document.getElementById('candidate-pager').innerHTML='';return}
+  h+='<button onclick="goPage('+Math.max(1,_page-1)+')" ' +(_page<=1?'disabled':'')+'>‹</button>';
+  for(var i=1;i<=pages;i++){
+    if(i===_page)h+='<span class="pg-active">'+i+'</span>';
+    else if(Math.abs(i-_page)<=2||i===1||i===pages)h+='<button onclick="goPage('+i+')">'+i+'</button>';
+    else if(i===2||i===pages-1)h+='<button>…</button>';
+  }
+  h+='<button onclick="goPage('+Math.min(pages,_page+1)+')" ' +(_page>=pages?'disabled':'')+'>›</button>';
+  document.getElementById('candidate-pager').innerHTML=h;
+}
+function goPage(p){_page=p;loadCandidates();window.scrollTo({top:0,behavior:'smooth'});}
+
+function featureTags(c){
+  var t=[];
+  if(c.icon_match)t.push('<span class="ftag ftag-on">favicon</span>');
+  try{var f=JSON.parse(c.behavior_flags);
+    if(f.brand_in_content)t.push('<span class="ftag ftag-on">品牌词</span>');
+    if(f.login_form)t.push('<span class="ftag ftag-on">登录</span>');
+    if(f.payment)t.push('<span class="ftag ftag-warn">支付</span>');
+    if(f.redirect_offsite)t.push('<span class="ftag ftag-neutral">跳转</span>');
+    if(f.reachable===false)t.push('<span class="ftag ftag-warn">不可达</span>');
+  }catch(e){}
+  try{var s=JSON.parse(c.sources);if(s.length>=2)t.push('<span class="ftag ftag-on">'+s.length+'源</span>');}catch(e){}
+  return t.join('')||'<span style="color:var(--gray-200)">—</span>';
+}
+
+async function setLabel(id,val){
+  await fetch('/api/candidates/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({manual_label:val})});
+  loadCandidates(true);
+}
+function exportCsv(){var tid=document.getElementById('result-task-select').value;if(tid)window.open('/api/tasks/'+tid+'/export','_blank');}
+function showShot(url){document.getElementById('screenshot-big').src=url;document.getElementById('screenshot-modal').classList.add('show');}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function statusBadge(s){
+  var m={pending:'b-pending',running:'b-running',done:'b-done',failed:'b-failed'};
+  var t={pending:'⏳ 等待',running:'● 运行中',done:'✓ 完成',failed:'✕ 失败'};
+  return '<span class="badge '+(m[s]||'')+'">'+(t[s]||s)+'</span>';
+}
+function llmBadge(c){
+  if(!c.llm_verdict)return '<span style="color:var(--gray-200)">—</span>';
+  var m={phishing:'b-phishing',suspicious:'b-suspicious',benign:'b-benign'};
+  return '<span class="badge '+(m[c.llm_verdict]||'')+'">'+c.llm_verdict+'</span><br><span style="font-size:.65rem;color:var(--gray-400)">'+(c.llm_confidence||0).toFixed(0)+'%</span>';
+}
+
+showTab('create');
+</script>
+</body>
+</html>
