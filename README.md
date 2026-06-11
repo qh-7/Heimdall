@@ -224,6 +224,14 @@ filter:
 | GET | `/api/screenshots/{name}` | 截图访问 |
 
 ---
+<img width="1066" height="629" alt="1" src="https://github.com/user-attachments/assets/0eb4bc19-441e-454a-afec-a8dd08bc471e" />
+
+<img width="1365" height="739" alt="2" src="https://github.com/user-attachments/assets/ecde91f5-b55f-4a3e-8a9d-6765b86bf865" />
+
+
+<img width="1442" height="951" alt="3" src="https://github.com/user-attachments/assets/89588d17-8635-4b94-9ec6-fd918a569cbd" />
+
+
 
 ## 功能二：敏感信息监测
 
@@ -268,6 +276,9 @@ filter:
 | GET | `/sensitive/api/monitor/tasks/{id}/export` | 导出 CSV |
 
 ---
+
+<img width="1429" height="792" alt="4" src="https://github.com/user-attachments/assets/4f694b8c-779b-4e94-b532-e4191d180672" />
+
 
 ## 目录结构
 
